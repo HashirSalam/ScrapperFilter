@@ -1,0 +1,154 @@
+Metadata-Version: 2.1
+Name: spinrewriter
+Version: 0.1.5
+Summary: Python bindings for SpinRewriter API
+Home-page: http://www.niteoweb.com
+Author: NiteoWeb Ltd.
+Author-email: info@niteoweb.com
+License: BSD
+Description: ====================================
+        Python bindings for SpinRewriter API
+        ====================================
+        
+        `Spin Rewriter <http://www.spinrewriter.com/bigcontentsearch>`_ is an online
+        service for spinning text (synonym substitution) that creates unique version(s)
+        of existing text. This package provides a way to easily interact with
+        `SpinRewriter API <http://www.spinrewriter.com/api>`_. Usage requires an
+        account, `get one here <http://www.spinrewriter.com/registration>`_.
+        
+        * `Source code @ GitHub <https://github.com/niteoweb/spinrewriter>`_
+        * `Releases @ PyPI <http://pypi.python.org/pypi/spinrewriter#downloads>`_
+        * `Documentation @ ReadTheDocs <http://readthedocs.org/docs/spinrewriter>`_
+        * `Continuous Integration @ Travis-CI <http://travis-ci.org/niteoweb/spinrewriter>`_
+        
+        
+        Install
+        =======
+        
+        Install into your Python path using `pip` or `easy_install`::
+        
+            $ pip install spinrewriter
+            $ easy_install spinrewriter
+        
+        
+        Usage
+        =====
+        
+        After installing it, this is how you use it::
+        
+            Initialize SpinRewriter.
+            >>> text = u"This is the text we want to spin."
+            >>> from spinrewriter import SpinRewriter
+            >>> rewriter = SpinRewriter('username', 'api_key')
+        
+            Request processed spun text with spintax.
+            >>> rewriter.text_with_spintax(text)
+            u"{This is|This really is|That is|This can be} some text that we'd {like to
+            |prefer to|want to|love to} spin."
+        
+            Request a unique variation of processed given text.
+            >>> rewriter.unique_variation(text)
+            u"This really is some text that we'd love to spin."
+        
+        
+        Changelog
+        =========
+        
+        0.1.5 (2012-12-17)
+        ------------------
+        
+        - Added tests for parsing error messages and fixed loads of nasty bugs found
+          while writing these tests.
+          [zupo]
+        
+        
+        0.1.4 (2012-11-06)
+        ------------------
+        
+        - Fixed spelling error in one of authentication error's message.
+          [zupo]
+        
+        - Use 'vvv' for syntax validation.
+          [matejc]
+        
+        
+        0.1.3 (2012-07-31)
+        ------------------
+        
+        - Fixed unicode encode/decode error for article texts containing non-ascii
+          characters.
+          [plamut]
+        
+        - Added missing test coverage for the unique_variation_from_spintax method.
+          [plamut]
+        
+        
+        0.1.2 (2012-07-24)
+        ------------------
+        
+        - Various fixes of bugs that surfaced when lib was put into staging.
+          [zupo]
+        
+        
+        0.1.1 (2012-04-13)
+        ------------------
+        
+        - A URL in README.txt was missing a leading ``http`` which broke reST rendering
+          on PyPI.
+          [zupo]
+        
+        
+        0.1 (2012-04-13)
+        ----------------
+        
+        - SpinRewriter facade class.
+          [plamut]
+        
+        - Tests and documentation.
+          [zupo]
+        
+        - Raw API access class.
+          [plamut]
+        
+        - Project skeleton.
+          [zupo]
+        
+        License (3-clause BSD)
+        ======================
+        
+        Copyright (c) 2012, NiteoWeb Ltd.
+        All rights reserved.
+        
+        Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions are met:
+        
+        * Redistributions of source code must retain the above copyright notice,
+          this list of conditions and the following disclaimer.
+        
+        * Redistributions in binary form must reproduce the above copyright
+          notice, this list of conditions and the following disclaimer in the
+          documentation and/or other materials provided with the distribution.
+        
+        * Neither the name of NiteoWeb Ltd. nor the names of its contributors may
+          be used to endorse or promote products derived from this software
+          without specific prior written permission.
+        
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+        AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+        DISCLAIMED. IN NO EVENT SHALL NITEOWEB LTD. BE LIABLE FOR ANY DIRECT,
+        INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+        BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+        DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+        OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+        NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+        EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+        
+        
+        
+Keywords: API spinner SpinRewriter
+Platform: UNKNOWN
+Classifier: Programming Language :: Python
+Classifier: Topic :: Internet :: WWW/HTTP
+Provides-Extra: release
+Provides-Extra: test

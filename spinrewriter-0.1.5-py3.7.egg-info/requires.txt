@@ -1,0 +1,9 @@
+setuptools
+
+[release]
+zest.releaser
+jarn.mkrelease
+
+[test]
+mock
+unittest2
