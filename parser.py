@@ -6,6 +6,9 @@ from keyCombo.comboData import stopwords
 import json
 import inflection
 
+#from nltk.corpus import wordnet
+
+
 def scrape_and_grab(link):
   user = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
   agent = "(KHTML, like Gecko) Chrome/74.0.3729.108 Safari / 537.36"
@@ -48,16 +51,17 @@ def scrape_and_grab(link):
     #print (e)
 
 def findTopic(word,Heading):
+    #print("Word  :"+ word +" Heading "+ Heading)
     if word in Heading:
         #print("Found :"+ word +" in "+ Heading)
-        #print (inflection.singularize(word))
+       
         return(word,Heading)
 
 
 def createTopic(DF,Term,combos):
-    # print("DF :",DF)
+    #print("DF :",DF)
     # print("Term :",Term)
-    # print("combos :",combos)
+    #print("combos :",combos)
     texd = []
     for index, row in DF.iterrows(): # for each row (page)
         #print(row["Page"])
@@ -65,21 +69,28 @@ def createTopic(DF,Term,combos):
         texd.append([d['HEADING'] for d in row["Page"]])
     HeadingsPerTerm = [i for sublist in texd for i in sublist]
     
-    # print("\n\n","###########","\n\n")
-    # print("DF : ", DF)
-    # print("Term : ",Term)
-    # print("Combos : ",combos)
+   
 
     dfObj = pd.DataFrame(columns=['Related Term','Heading','Topic'])   
     
     for Heading in HeadingsPerTerm:
         for word in combos:
-            result = findTopic(word,Heading)
+            result = findTopic(word.lower(),Heading.lower())
+            # tmp = wordnet.synsets(word)[0].pos()
+            # print(word, ":", tmp)
+            # if (tmp == 'n'):
             wordGroup = inflection.singularize(word)+","+inflection.pluralize(word)
+            # else:
+            #     wordGroup = word
             if result is not None:
                 word,Heading = result
                 dfObj = dfObj.append({'Related Term':Term,'Heading': Heading,'Topic':wordGroup}, ignore_index=True)
-                
+   
+    dfObj.drop_duplicates(subset=['Heading', 'Topic'],inplace=True) # remove duplicates
+    
+    dfObj = dfObj.groupby('Heading').agg({'Related Term':'first','Topic': ', '.join}).reset_index()  #Group by Heading
+           
+    dfObj = dfObj[['Related Term','Heading','Topic']] #Re-arranging again
     print(dfObj)
     
           
@@ -102,10 +113,9 @@ def combifyData(DF):
         
         text = ' '.join(parasPerTerm)
         combos = combify(text, 1, stop_words=stopwords, limit=2)
-        average = combos["NUMBER_OF_TIMES_FOUND"].mean() # calculate average
-        average = average + 1
-
-        df = combos[combos["NUMBER_OF_TIMES_FOUND"] > average] # Filter value less than average
+        #average = combos["NUMBER_OF_TIMES_FOUND"].mean() # calculate average
+        #average = average + 1 # Add 1 to average
+        df = combos[combos["NUMBER_OF_TIMES_FOUND"] >= 2] # Filter value less than average
         df= df.sort_values(by="NUMBER_OF_TIMES_FOUND", ascending=False) #Sort in Desc
 
         orderedCombos = tuple(list(df.index))
