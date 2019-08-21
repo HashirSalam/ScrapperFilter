@@ -5,7 +5,6 @@ from keyCombo.keyComboFinder import combify
 from keyCombo.comboData import stopwords
 #############################
 import inflection
-from string import digits
 #from nltk.corpus import wordnet
 import nltk
 import nltk.data
@@ -62,22 +61,11 @@ def scrape_and_grab(link):
     print ("ERROR : " + link)
     #print (e)
 
-def sortGroup(str):
-    print (str.sort_values())
-    #return (str)
-    # arr = str.split(',')
-    # arr = sorted(arr)
-    # return ','.join(arr)
-
 def findTopic(word,Heading,paragraph):
-    #print("Word  :"+ word +" Heading "+ Heading)
     if word in Heading:
-        #print("Found :"+ word +" in "+ Heading)
-       
         return(word,Heading,paragraph)
 
 def findSentences(word,sentence):
-
     if word in sentence:
         return word,sentence
 
@@ -104,39 +92,31 @@ def createTopic(DF,Term,combos):
 
 
 def generateSpintax(DF,combos):
-    
-    df = DF.groupby('Word').agg({'Sentence': ' |'.join,'Heading':'first'}).reset_index()
-    df['Heading'] =  ('{' + df['Heading'] + '}')
+    #returns spintext
+    df = DF.groupby('Word').agg({'Sentence': ' |'.join}).reset_index()
     df['Sentence'] = ('{' + df['Sentence'] + '}')
-
-    headingTextforThis = df['Heading'].apply(str)
     texd = []
     for index, row in df.iterrows():
         texd.append(row["Sentence"])
     spintaxInput = ' '.join(texd)
-    
     combos = list (combos)
     response = rewriter.api._transform_plain_text('text_with_spintax', spintaxInput, combos, 'high')
-    #response = rewriter.text_with_spintax(spintaxInput,confidence_level= 'high')
-    #print(response)
     if (response["response"] == "Original text too short."):
         print("Input too short : ",spintaxInput)
-    return(response["response"],headingTextforThis)
+    return(response["response"])
 
 def groupFix(DF,Topic):
-    
-    #print("Topic: ",Topic)
-    #print(DF)
+    #Get data for each group
     texd = []
     headings = []
     for para,heading in zip(DF["Paragraph"],DF["Heading"]):
-        #print("ye : ",para,heading)
+    
         texd.append(para) 
         text = ' '.join(texd)
 
         headings.append(heading) 
         headingText = ' | '.join(headings)
-    #print("TEXT :"+text,"HEADING :"+headingText )    
+     
     return (text,headingText)    
 
 def combifyTopic(DF):
@@ -144,7 +124,7 @@ def combifyTopic(DF):
     term = str(DF['Related Term'].iloc[0])
     grouped_topic = DF.groupby('Topic')
     
-    fd = pd.DataFrame(columns=['Term','Topic','Heading','Spintext'])
+    fd = pd.DataFrame(columns=['Term','Heading','Spintext'])
     for key, item in grouped_topic:
         dfObj = pd.DataFrame(columns=['Sentence','Word','Heading']) # new everytime
         #print("Topic : ",key)
@@ -175,7 +155,7 @@ def combifyTopic(DF):
             dfObj = dfObj.groupby('Sentence').agg({'Word': ', '.join,'Heading':'first'}).reset_index()  #Group by Heading 
             dfObj = dfObj[['Sentence','Word','Heading']] #Re-arranging again
             dt = dfObj.sort_values(by="Word", ascending=False)
-            #dt['Word'] = dt['Word'].str.split(',').sort_values() # sort out (not workindg)
+            #dt['Word'] = dt['Word'].str.split(',').sort_values()
             dt['Count'] = dt.groupby('Word')['Word'].transform('count')
             dt['Len'] = dt['Sentence'].str.len() # count chracters
             dt= dt.sort_values(by="Count", ascending=False) #Sort in Desc
@@ -185,9 +165,11 @@ def combifyTopic(DF):
             # filename = "%s.csv" % name
             # dt.to_csv(filename,index=False, encoding='utf-8-sig')
             ####Spintax###
-            
-            response , headingTextforThis = generateSpintax(dt,combos)
-            fd = fd.append({'Term':term,'Topic':key,'Heading':headingTextforThis, 'Spintext':response}, ignore_index=True)
+            if not dt.empty:
+                response = generateSpintax(dt,combos)
+                headingTextforThis = str(dt['Heading'].iloc[0]) 
+                headingTextforThis =  ('{' + headingTextforThis + '}')
+                fd = fd.append({'Term':term,'Heading':headingTextforThis, 'Spintext':response}, ignore_index=True)
             
     # filename = "%s.csv" % name
     # fd.to_csv(filename,index=False, encoding='utf-8-sig')
@@ -201,7 +183,7 @@ def combifyTopic(DF):
 
 def combifyData(DF): 
     grouped_df = DF.groupby('Related Terms')
-    dataframes = pd.DataFrame(columns=['Term','Topic','Heading','Spintext'])  
+    dataframes = pd.DataFrame(columns=['Term','Heading','Spintext'])  
     #print(DF)
     for key, item in grouped_df:
         relatedTerm = key
@@ -234,10 +216,10 @@ def combifyData(DF):
  
 
 #Read CSV for URLs
-df = pd.read_csv("Full2.csv",index_col=False) 
+df = pd.read_csv("Full3.csv",index_col=False) 
 #store relavant data
 df=df[['URL','Related Terms']]
-
+#Read fil for matching words 
 matchFrame = pd.read_csv("Plumbing Entities2.csv",index_col=False)
 #get matching words in list
 matchFrame = matchFrame[['matched_text']]
@@ -253,8 +235,8 @@ for index, row in df.iterrows():
         if(len(page)!=0):
             dfObj = dfObj.append({'URL': link,'Related Terms':relatedTerms, 'Page': page}, ignore_index=True)
 
-##################################################### HISTORY ############################################################
 
+#Create Master Dataframe
 History = pd.DataFrame(columns=['URL','Related Terms','Heading','Paragraph']) 
 for index, row in dfObj.iterrows(): # for each row (page)
     term = row["Related Terms"]
@@ -265,8 +247,6 @@ for index, row in dfObj.iterrows(): # for each row (page)
         History = History.append({'URL': url,'Related Terms':term, 'Heading': heading,'Paragraph':paragraph}, ignore_index=True) 
 
 History.drop_duplicates(inplace=True)
-#print(History)
-##########################################################################################################################
 
 combifyData(History)
 
