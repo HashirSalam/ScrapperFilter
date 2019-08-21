@@ -105,11 +105,11 @@ def createTopic(DF,Term,combos):
 
 def generateSpintax(DF,combos):
     
-
-
-    df = DF.groupby('Word').agg({'Sentence': ' |'.join}).reset_index()
+    df = DF.groupby('Word').agg({'Sentence': ' |'.join,'Heading':'first'}).reset_index()
+    df['Heading'] =  ('{' + df['Heading'] + '}')
     df['Sentence'] = ('{' + df['Sentence'] + '}')
 
+    headingTextforThis = df['Heading'].apply(str)
     texd = []
     for index, row in df.iterrows():
         texd.append(row["Sentence"])
@@ -119,7 +119,9 @@ def generateSpintax(DF,combos):
     response = rewriter.api._transform_plain_text('text_with_spintax', spintaxInput, combos, 'high')
     #response = rewriter.text_with_spintax(spintaxInput,confidence_level= 'high')
     #print(response)
-    return(response["response"])
+    if (response["response"] == "Original text too short."):
+        print("Input too short : ",spintaxInput)
+    return(response["response"],headingTextforThis)
 
 def groupFix(DF,Topic):
     
@@ -142,23 +144,13 @@ def combifyTopic(DF):
     term = str(DF['Related Term'].iloc[0])
     grouped_topic = DF.groupby('Topic')
     
-    fd = pd.DataFrame(columns=['Term','Spintext'])
+    fd = pd.DataFrame(columns=['Term','Topic','Heading','Spintext'])
     for key, item in grouped_topic:
         dfObj = pd.DataFrame(columns=['Sentence','Word','Heading']) # new everytime
         #print("Topic : ",key)
         Topic = key
         text,headingText = groupFix(grouped_topic.get_group(key),key)
-    
-        # texd = []
-        # headings = []
-        # for para,heading in zip(item["Paragraph"],item["Heading"]):
-        #     #print("ye : ",para,heading)
-        #     texd.append(para) 
-        #     text = ' '.join(texd)
-
-        #     headings.append(heading) 
-        #     headingText = ' | '.join(headings)
-        
+   
         #Calculate Combos for paragraphs
         combos = combify(text, 1, stop_words=stopwords) # returns datafram
         average = combos["NUMBER_OF_TIMES_FOUND"].mean() # calculate average
@@ -183,25 +175,24 @@ def combifyTopic(DF):
             dfObj = dfObj.groupby('Sentence').agg({'Word': ', '.join,'Heading':'first'}).reset_index()  #Group by Heading 
             dfObj = dfObj[['Sentence','Word','Heading']] #Re-arranging again
             dt = dfObj.sort_values(by="Word", ascending=False)
-            #dt['Len'] = dt['Sentence'].str.split().str.len() # count words 
-            #dt['Word'] = dt['Word'].str.split(',').sort_values() # sort out
+            #dt['Word'] = dt['Word'].str.split(',').sort_values() # sort out (not workindg)
             dt['Count'] = dt.groupby('Word')['Word'].transform('count')
             dt['Len'] = dt['Sentence'].str.len() # count chracters
             dt= dt.sort_values(by="Count", ascending=False) #Sort in Desc
             dt = dt[dt["Count"] >= 2]
-            path='Output\\'
-            name = path+key+ '('+term+')'
-            filename = "%s.csv" % name
-            dt.to_csv(filename,index=False, encoding='utf-8-sig')
-            ####Spintax###
-            
-            response = generateSpintax(dt,combos)
-            fd = fd.append({'Term':term, 'Spintext':response}, ignore_index=True)
-            # path='Spintax\\'
+            # path='Output\\'
             # name = path+key+ '('+term+')'
             # filename = "%s.csv" % name
-            # fd.to_csv(filename,index=False, encoding='utf-8-sig')
-            print(fd)
+            # dt.to_csv(filename,index=False, encoding='utf-8-sig')
+            ####Spintax###
+            
+            response , headingTextforThis = generateSpintax(dt,combos)
+            fd = fd.append({'Term':term,'Topic':key,'Heading':headingTextforThis, 'Spintext':response}, ignore_index=True)
+            
+    # filename = "%s.csv" % name
+    # fd.to_csv(filename,index=False, encoding='utf-8-sig')
+    #print(fd) #retruns 1 terms alll topic spintax
+    return (fd)
       
         
 
@@ -210,7 +201,7 @@ def combifyTopic(DF):
 
 def combifyData(DF): 
     grouped_df = DF.groupby('Related Terms')
-    dataframes = pd.DataFrame(columns=['Related Term','Heading','Paragraph','Topic'])  
+    dataframes = pd.DataFrame(columns=['Term','Topic','Heading','Spintext'])  
     #print(DF)
     for key, item in grouped_df:
         relatedTerm = key
@@ -229,14 +220,14 @@ def combifyData(DF):
         orderedCombos = tuple(list(df.index))
         dfObj = createTopic(grouped_df.get_group(key),relatedTerm,orderedCombos) # function call for each (DF for that related term , related term , and particular combo)
 
-        combifyTopic(dfObj)
+        spintaxDF = combifyTopic(dfObj)
         #print (dfObj)
-        #frames = [dataframes,dfObj]
-        #dataframes = pd.concat(frames)
+        frames = [dataframes,spintaxDF]
+        dataframes = pd.concat(frames)
         # path='Output\\'
         # dfObj.to_csv(path+relatedTerm+'.csv',index=False, encoding='utf-8')
-    #dataframes.to_csv("Output.csv",index=False, encoding='utf-8')
-    #print(dataframes)
+    dataframes.to_csv("Spintax.csv",index=False, encoding='utf-8')
+    print(dataframes)
    
         
       
