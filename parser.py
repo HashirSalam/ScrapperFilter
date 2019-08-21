@@ -4,7 +4,7 @@ import requests
 from keyCombo.keyComboFinder import combify
 from keyCombo.comboData import stopwords
 import re
-
+import time
 #############################
 import inflection
 #from nltk.corpus import wordnet
@@ -93,13 +93,16 @@ def createTopic(DF,Term,combos):
             #result = findTopic(word.lower(),row['Heading'].lower(),row['Paragraph'])
             wordGroup = inflection.singularize(word)+","+inflection.pluralize(word)
             if result is not None:
-                print("Found : ",wordGroup," in ",row['Heading'])
+                #print("Found : ",wordGroup," in ",row['Heading'])
                 #word,Heading,paragraph = result
                 dfObj = dfObj.append({'Related Term':Term,'Heading': row['Heading'],'Paragraph': row['Paragraph'],'Topic':wordGroup}, ignore_index=True)
 
     dfObj = dfObj.groupby('Heading').agg({'Related Term':'first','Paragraph':'first','Topic': ', '.join}).reset_index()  #Group by Heading   
     dfObj = dfObj[['Related Term','Heading','Paragraph','Topic']] #Re-arranging again
-
+    ##Fix for single heading#####
+    dfObj['Count'] = dfObj.groupby('Topic')['Topic'].transform('count')
+    dfObj = dfObj[dfObj["Count"] >= 2]
+    ######
     dfObj = dfObj.sort_values(by="Topic", ascending=False)
     #print (dfObj)
     return (dfObj)
@@ -115,8 +118,7 @@ def generateSpintax(DF,combos):
     spintaxInput = ' '.join(texd)
     combos = list (combos)
     response = rewriter.api._transform_plain_text('text_with_spintax', spintaxInput, combos, 'high')
-    if (response["response"] == "Original text too short."):
-        print("Input too short : ",spintaxInput)
+    time.sleep(7)
     return(response["response"])
 
 def groupFix(DF,Topic):
