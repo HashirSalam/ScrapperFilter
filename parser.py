@@ -21,6 +21,7 @@ rewriter = SpinRewriter('info@sussexseo.net', '82109b0#51de401_45b0364?5ada2fd')
 URLfilename = "Full3.csv"
 MatchingFileName = "Plumbing Entities2.csv"
 
+API = 0
 
 
 
@@ -117,9 +118,16 @@ def generateSpintax(DF,combos):
         texd.append(row["Sentence"])
     spintaxInput = ' '.join(texd)
     combos = list (combos)
-    response = rewriter.api._transform_plain_text('text_with_spintax', spintaxInput, combos, 'high')
+    global API
+    API = API + 1
+    print ("API CALL : ", API)
     time.sleep(7)
+    #print(spintaxInput)
+    spintaxInput = " ".join(spintaxInput.split())
+    #print(spintaxInput)
+    response = rewriter.api._transform_plain_text('text_with_spintax', spintaxInput, combos, 'high')
     return(response["response"])
+    #return (spintaxInput.rstrip())
 
 def groupFix(DF,Topic):
     #Get data for each group
